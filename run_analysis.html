@@ -110,12 +110,14 @@ $(document).ready(function () {
 
 <h1 class="title">run_analysis.R</h1>
 <h4 class="author"><em>Virgil</em></h4>
-<h4 class="date"><em>Sun Mar 13 13:10:45 2016</em></h4>
+<h4 class="date"><em>Sun Mar 13 17:15:24 2016</em></h4>
 
 </div>
 
 
-<pre class="r"><code>packages &lt;- c(&quot;data.table&quot;, &quot;reshape2&quot;, &quot;knitr&quot;, &quot;markdown&quot;, &quot;qtl&quot;)
+<pre class="r"><code>## Set required packages to a vector.
+packages &lt;- c(&quot;data.table&quot;, &quot;reshape2&quot;, &quot;knitr&quot;, &quot;markdown&quot;, &quot;qtl&quot;)
+## Use sapply to apply the &quot;require&quot; function to each member of the vector. 
 sapply(packages, require, character.only=TRUE, quietly=FALSE)</code></pre>
 <pre><code>## Loading required package: data.table</code></pre>
 <pre><code>## Loading required package: reshape2</code></pre>
@@ -129,19 +131,26 @@ sapply(packages, require, character.only=TRUE, quietly=FALSE)</code></pre>
 <pre><code>## Loading required package: qtl</code></pre>
 <pre><code>## data.table   reshape2      knitr   markdown        qtl 
 ##       TRUE       TRUE       TRUE       TRUE       TRUE</code></pre>
-<pre class="r"><code>path &lt;- getwd()
+<pre class="r"><code>## Set the current working directory as the &quot;path&quot; variable
+path &lt;- getwd()
 path</code></pre>
 <pre><code>## [1] &quot;C:/Users/Virgil/Documents/GitHub/GettingandCleaningDataCourseProject&quot;</code></pre>
-<pre class="r"><code>FileUrl &lt;- &quot;https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip&quot;
+<pre class="r"><code>## Set 'FileUrl' to the download location
+FileUrl &lt;- &quot;https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip&quot;
+## Set the filename of the download
 file &lt;- &quot;Dataset.zip&quot;
+## Create the directory if it doesn't exist.
 if(!file.exists(path)) {dir.create(path)}
+## Download the file from the path defined earlier to the filename defined earlier.
 download.file(FileUrl, file.path(path,file))
 
+## Set 7-zip executable to unzip the file.
 executable &lt;- file.path(&quot;C:&quot;, &quot;Program Files&quot;, &quot;7-Zip&quot;, &quot;7z.exe&quot;)
 parameters &lt;- &quot;x&quot;
+## Unzip the file.
 command &lt;- paste(paste0(&quot;\&quot;&quot;, executable, &quot;\&quot;&quot;), parameters, paste0(&quot;\&quot;&quot;, file.path(path,file), &quot;\&quot;&quot;))
 system(command)
-
+## Unzip to the 'UCI HAR Dataset' folder.
 pathIn &lt;- file.path(path, &quot;UCI HAR Dataset&quot;)
 list.files(pathIn, recursive = TRUE)</code></pre>
 <pre><code>##  [1] &quot;activity_labels.txt&quot;                         
@@ -172,36 +181,38 @@ list.files(pathIn, recursive = TRUE)</code></pre>
 ## [26] &quot;train/subject_train.txt&quot;                     
 ## [27] &quot;train/X_train.txt&quot;                           
 ## [28] &quot;train/y_train.txt&quot;</code></pre>
-<pre class="r"><code>datatableSubjectTrain &lt;- fread(file.path(pathIn, &quot;train&quot;, &quot;subject_train.txt&quot;))
+<pre class="r"><code>## Read Subject Training data and Test data. 
+datatableSubjectTrain &lt;- fread(file.path(pathIn, &quot;train&quot;, &quot;subject_train.txt&quot;))
 datatableSubjectTest &lt;- fread(file.path(pathIn, &quot;test&quot;, &quot;subject_test.txt&quot;))
-
+## Read Activity Training data and Test data.
 datatableActivityTrain &lt;- fread(file.path(pathIn, &quot;train&quot;, &quot;Y_train.txt&quot;))
 datatableActivityTest &lt;- fread(file.path(pathIn, &quot;test&quot;, &quot;Y_test.txt&quot;))
-
+## Define 'fileToDataTable' function to convert tables read from files to data.table format in R.
 fileToDataTable &lt;- function (file) {
     df &lt;- read.table(file)
     datatable &lt;- data.table(df)
     
 }
+## Convert the data frames to data tables.
 datatableTrain &lt;- fileToDataTable(file.path(pathIn, &quot;train&quot;, &quot;X_train.txt&quot;))
 datatableTest &lt;- fileToDataTable(file.path(pathIn , &quot;test&quot; , &quot;X_test.txt&quot;))
-
+## Concatenate the data tables.
 datatableSubject &lt;- rbind(datatableSubjectTrain, datatableSubjectTest)
 setnames(datatableSubject, &quot;V1&quot;, &quot;subject&quot;)
 datatableActivity &lt;- rbind(datatableActivityTrain, datatableActivityTest)
 setnames(datatableActivity, &quot;V1&quot;, &quot;activityNum&quot;)
 datatable &lt;- rbind(datatableTrain, datatableTest)
-
+## Merge the columns
 datatableSubject &lt;- cbind(datatableSubject, datatableActivity)
 datatable &lt;- cbind(datatableSubject, datatable)
-
+## Set Key.
 setkey(datatable, subject, activityNum)
-
+## Read the features.txt file to determine which variables in datatable are measurements for the mean &amp; stdev.
 datatableFeatures &lt;- fread(file.path(pathIn, &quot;features.txt&quot;))
 setnames(datatableFeatures, names(datatableFeatures), c(&quot;featureNum&quot;, &quot;featureName&quot;))
-
+## Subset the measurements for the mean and stdev. 
 datatableFeatures &lt;- datatableFeatures[grepl(&quot;mean\\(\\)|std\\(\\)&quot;, featureName)]
-
+## Convert the column numbers to a vector of variable names, which match columns in datatable.
 datatableFeatures$featureCode &lt;- datatableFeatures[, paste0(&quot;V&quot;, featureNum)]
 head(datatableFeatures)</code></pre>
 <pre><code>##    featureNum       featureName featureCode
@@ -219,27 +230,28 @@ head(datatableFeatures)</code></pre>
 ## [41] &quot;V266&quot; &quot;V267&quot; &quot;V268&quot; &quot;V269&quot; &quot;V270&quot; &quot;V271&quot; &quot;V345&quot; &quot;V346&quot; &quot;V347&quot; &quot;V348&quot;
 ## [51] &quot;V349&quot; &quot;V350&quot; &quot;V424&quot; &quot;V425&quot; &quot;V426&quot; &quot;V427&quot; &quot;V428&quot; &quot;V429&quot; &quot;V503&quot; &quot;V504&quot;
 ## [61] &quot;V516&quot; &quot;V517&quot; &quot;V529&quot; &quot;V530&quot; &quot;V542&quot; &quot;V543&quot;</code></pre>
-<pre class="r"><code>select &lt;- c(key(datatable), datatableFeatures$featureCode)
+<pre class="r"><code>## Subset these variables using the vector of variable names created in the last step. 
+select &lt;- c(key(datatable), datatableFeatures$featureCode)
 datatable &lt;- datatable[, select, with=FALSE]
-
+## Read activity_labels.txt to add descriptive names to the activities.
 datatableActivityNames &lt;- fread(file.path(pathIn, &quot;activity_labels.txt&quot;))
 setnames(datatableActivityNames, names(datatableActivityNames), c(&quot;activityNum&quot;, &quot;activityName&quot;))
-
+## Merge activity labels.
 datatable &lt;- merge(datatable, datatableActivityNames, by=&quot;activityNum&quot;, all.x=TRUE)
-
+## Add 'activityName' as a key.
 setkey(datatable, subject, activityNum, activityName)
-
+## Melt the data table to reshape it from a short and wide format to a tall and narrow format. 
 datatable &lt;- data.table(melt(datatable, key(datatable), variable.name=&quot;featureCode&quot;))
-
+## Merge activity name. 
 datatable &lt;- merge(datatable, datatableFeatures[, list(featureNum, featureCode, featureName)], by=&quot;featureCode&quot;, all.x=TRUE)
-
+## Create new 'activity' and 'feature' variables equivalent to 'activityName' and 'featureName' as a factor classes, respectively. 
 datatable$activity &lt;- factor(datatable$activityName)
 datatable$feature &lt;- factor(datatable$featureName)
-
+## Separate features from featureName.
 grepthis &lt;- function (regex){
     grepl(regex, datatable$feature)
 }
-
+## Features with 2 categories.
 n &lt;- 2
 y &lt;- matrix(seq(1, n), nrow=n)
 x &lt;- matrix(c(grepthis(&quot;^t&quot;), grepthis(&quot;^f&quot;)), ncol=nrow(y))
@@ -250,25 +262,91 @@ x &lt;- matrix(c(grepthis(&quot;BodyAcc&quot;), grepthis(&quot;GravityAcc&quot;)
 datatable$featAcceleration &lt;- factor(x %*% y, labels=c(NA, &quot;Body&quot;, &quot;Gravity&quot;))
 x &lt;- matrix(c(grepthis(&quot;mean()&quot;), grepthis(&quot;std()&quot;)), ncol=nrow(y))
 datatable$featVariable &lt;- factor(x %*% y, labels=c(&quot;Mean&quot;, &quot;SD&quot;))
-
+## Features with 1 category.
 datatable$featJerk &lt;- factor(grepthis(&quot;Jerk&quot;), labels=c(NA, &quot;Jerk&quot;))
 datatable$featMagnitude &lt;- factor(grepthis(&quot;Mag&quot;), labels=c(NA, &quot;Magnitude&quot;))
-
+## Features with 3 categories.
 n &lt;- 3
 y &lt;- matrix(seq(1, n), nrow=n)
 x &lt;- matrix(c(grepthis(&quot;-X&quot;), grepthis(&quot;-Y&quot;), grepthis(&quot;-Z&quot;)), ncol=nrow(y))
 datatable$featAxis &lt;- factor(x %*% y, labels=c(NA, &quot;X&quot;, &quot;Y&quot;, &quot;Z&quot;))
-
+## Check to make sure all possible combinations of 'feature are accounted for by all possible combinations of the factor class variables. 
 r1 &lt;- nrow(datatable[, .N, by=c(&quot;feature&quot;)])
 r2 &lt;- nrow(datatable[, .N, by=c(&quot;featDomain&quot;, &quot;featAcceleration&quot;, &quot;featInstrument&quot;, &quot;featJerk&quot;, &quot;featMagnitude&quot;, &quot;featVariable&quot;, &quot;featAxis&quot;)])
 r1 == r2</code></pre>
 <pre><code>## [1] TRUE</code></pre>
-<pre class="r"><code>setkey(datatable, subject, activity, featDomain, featAcceleration, featInstrument, featJerk, featMagnitude, featVariable, featAxis)
+<pre class="r"><code># Create a data set with the average of each variable for each activity and each subject.
+setkey(datatable, subject, activity, featDomain, featAcceleration, featInstrument, featJerk, featMagnitude, featVariable, featAxis)
 datatableTidy &lt;- datatable[, list(count = .N, average = mean(value)), by=key(datatable)]
+##Following code moved to makeCodebook.Rmd
+## Write the dataset to a new file called &quot;Tidydataset.txt&quot;.
+#write.table(datatableTidy, file = &quot;Tidydataset.txt&quot;, row.names=FALSE)
 
-##if(!file.exists(&quot;makeCodebook.Rmd&quot;)) {file.create(&quot;makeCodebook.Rmd&quot;)}
-##knit(&quot;makeCodebook.Rmd&quot;, output=&quot;codebook.md&quot;, encoding=&quot;ISO8859-1&quot;, quiet=FALSE)
-##markdownToHTML(&quot;codebook.md&quot;, &quot;codebook.html&quot;)</code></pre>
+## Make codebook. 
+
+knit(&quot;makeCodebook.Rmd&quot;, output=&quot;codebook.md&quot;, encoding=&quot;ISO8859-1&quot;, quiet=FALSE)</code></pre>
+<pre><code>## 
+## 
+## processing file: makeCodebook.Rmd</code></pre>
+<pre><code>## 
+  |                                                                       
+  |                                                                 |   0%
+  |                                                                       
+  |.....                                                            |   8%
+##    inline R code fragments
+## 
+## 
+  |                                                                       
+  |...........                                                      |  17%
+## label: unnamed-chunk-2
+## 
+  |                                                                       
+  |................                                                 |  25%
+##   ordinary text without R code
+## 
+## 
+  |                                                                       
+  |......................                                           |  33%
+## label: unnamed-chunk-3
+## 
+  |                                                                       
+  |...........................                                      |  42%
+##   ordinary text without R code
+## 
+## 
+  |                                                                       
+  |................................                                 |  50%
+## label: unnamed-chunk-4
+## 
+  |                                                                       
+  |......................................                           |  58%
+##   ordinary text without R code
+## 
+## 
+  |                                                                       
+  |...........................................                      |  67%
+## label: unnamed-chunk-5
+## 
+  |                                                                       
+  |.................................................                |  75%
+##   ordinary text without R code
+## 
+## 
+  |                                                                       
+  |......................................................           |  83%
+## label: unnamed-chunk-6
+## 
+  |                                                                       
+  |............................................................     |  92%
+##   ordinary text without R code
+## 
+## 
+  |                                                                       
+  |.................................................................| 100%
+## label: save</code></pre>
+<pre><code>## output file: codebook.md</code></pre>
+<pre><code>## [1] &quot;codebook.md&quot;</code></pre>
+<pre class="r"><code>markdownToHTML(&quot;codebook.md&quot;, &quot;codebook.html&quot;)</code></pre>
 
 
 
