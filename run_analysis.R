@@ -98,5 +98,5 @@ setkey(datatable, subject, activity, featDomain, featAcceleration, featInstrumen
 datatableTidy <- datatable[, list(count = .N, average = mean(value)), by=key(datatable)]
 
 ##if(!file.exists("makeCodebook.Rmd")) {file.create("makeCodebook.Rmd")}
-##knit("makeCodebook.Rmd", output="codebook.md", encoding="ISO8859-1", quiet=FALSE)
+knit("makeCodebook.Rmd", output="codebook.md", encoding="ISO8859-1", quiet=FALSE)
 ##markdownToHTML("codebook.md", "codebook.html")
